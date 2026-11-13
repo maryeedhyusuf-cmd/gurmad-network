@@ -6,14 +6,16 @@
   <title>GURMAD NETWORK</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
-    header { background-color: #0b3d91; color: white; padding: 20px; text-align: center; }
-    nav { background-color: #06265c; display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
-    nav a { color: white; text-decoration: none; margin: 8px 15px; font-weight: bold; font-size: 14px; }
-    .section { padding: 30px 20px; max-width: 900px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    header { background-color: #0b3d91; color: white; padding: 25px 15px; text-align: center; }
+    nav { background-color: #06265c; display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; position: sticky; top: 0; z-index: 100; }
+    nav a { color: white; text-decoration: none; margin: 6px 12px; font-weight: bold; font-size: 14px; }
+    .section { padding: 25px 20px; max-width: 950px; margin: 20px auto; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
     h2 { color: #0b3d91; border-bottom: 2px solid #0b3d91; padding-bottom: 8px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
-    .card { border: 1px solid #ddd; padding: 15px; border-radius: 6px; background: #fafafa; }
-    footer { background-color: #0b3d91; color: white; text-align: center; padding: 15px; margin-top: 30px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 15px; }
+    .card { border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; background: #fafafa; }
+    .card img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 6px; margin-bottom: 10px; }
+    .video-link { display: inline-block; margin-top: 10px; padding: 8px 14px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 14px; }
+    footer { background-color: #0b3d91; color: white; text-align: center; padding: 18px; margin-top: 30px; }
   </style>
 </head>
 <body>
@@ -37,33 +39,24 @@
     <p>Kani waa bogga rasmiga ah ee Gurmad Network. Waxaad halkan ka heli doontaa warar sugan, barnaamijyo tayo leh, iyo hawlaha samafalka bulshada.</p>
   </div>
 
+  <div class="section" id="news">
+    <h2>Warar iyo Warbixino</h2>
+    <div class="grid" id="news-container"><p>Soo dejinaya wararka...</p></div>
+  </div>
+
   <div class="section" id="media">
     <h2>GURMAD MEDIA</h2>
-    <p>Qaybta warbaahinta, barnaamijyada muuqaalka ah, iyo falanqaynta.</p>
+    <div class="grid" id="media-container"><p>Soo dejinaya barnaamijyada...</p></div>
   </div>
 
   <div class="section" id="humanitarian">
     <h2>GURMAD HUMANITARIAN</h2>
-    <p>Qaybta gargaarka bini'aadantinimo, caawinta dadka tabaalaysan, iyo mashaariicda samafalka.</p>
-  </div>
-
-  <div class="section" id="news">
-    <h2>Warar iyo Warbixino</h2>
-    <div class="grid" id="news-container">
-      <div class="card">
-        <h3>Warbixintii Ugu Dambaysay</h3>
-        <p>Halkan waxaa ka soo muuqan doona wararka cusub ee laga soo daabaco qaybta maamulka (Admin).</p>
-      </div>
-    </div>
+    <div class="grid" id="humanitarian-container"><p>Soo dejinaya hawlaha samafalka...</p></div>
   </div>
 
   <div class="section" id="gallery">
     <h2>Sawirro iyo Muuqaallo</h2>
-    <div class="grid" id="media-container">
-      <div class="card">
-        <p>Sawirrada iyo muuqaallada aad soo geliso maamulka ayaa halkan ka soo muuqan doona.</p>
-      </div>
-    </div>
+    <div class="grid" id="gallery-container"><p>Soo dejinaya sawirrada iyo muuqaallada...</p></div>
   </div>
 
   <div class="section" id="contact">
@@ -77,5 +70,56 @@
     <p>&copy; 2026 GURMAD NETWORK. Xuquuqda oo dhan way dhowran tahay.</p>
   </footer>
 
+  <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://gstatic.com";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJzkKJUtrfCSCiBfHrnY4J6ck-H-prqC4",
+      authDomain: "://firebaseapp.com",
+      projectId: "gurmad-network",
+      storageBucket: "gurmad-network.firebasestorage.app",
+      messagingSenderId: "777748735743",
+      appId: "1:777748735743:web:5292e60252dfd315c50eca",
+      measurementId: "G-XHM1BMS69H"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function loadContent() {
+      const containers = {
+        news: document.getElementById("news-container"),
+        media: document.getElementById("media-container"),
+        humanitarian: document.getElementById("humanitarian-container"),
+        gallery: document.getElementById("gallery-container")
+      };
+
+      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+
+      Object.values(containers).forEach(c => c.innerHTML = "");
+
+      snap.forEach((doc) => {
+        const d = doc.data();
+        const target = containers[d.category] || containers.news;
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          ${d.image ? `<img src="${d.image}" alt="${d.title}">` : ""}
+          <h3>${d.title}</h3>
+          <p>${d.content}</p>
+          ${d.videoUrl ? `<a class="video-link" href="${d.videoUrl}" target="_blank">▶ Daawo Muuqaalka</a>` : ""}
+        `;
+        target.appendChild(card);
+      });
+
+      Object.values(containers).forEach(c => {
+        if (c.innerHTML === "") c.innerHTML = "<p>Weli wax laguma soo daabicin qaybtan.</p>";
+      });
+    }
+
+    loadContent();
+  </script>
 </body>
 </html>
