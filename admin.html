@@ -5,19 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maamulka - GURMAD NETWORK</title>
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-    .box { max-width: 500px; margin: 40px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h2 { color: #0b3d91; text-align: center; }
-    input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 12px; background-color: #0b3d91; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+    body { font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; }
+    .box { max-width: 600px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2, h3 { color: #0b3d91; text-align: center; }
+    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 15px; }
+    button { width: 100%; padding: 12px; background-color: #0b3d91; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 8px; }
     button:hover { background-color: #06265c; }
     .hidden { display: none; }
     .logout-btn { background-color: #d9534f; margin-top: 20px; }
+    .post-item { border: 1px solid #ddd; padding: 12px; margin-top: 10px; border-radius: 6px; background: #fafafa; }
+    .del-btn { background-color: #c9302c; padding: 6px 12px; font-size: 13px; width: auto; margin-top: 5px; }
+    .edit-btn { background-color: #f0ad4e; padding: 6px 12px; font-size: 13px; width: auto; margin-top: 5px; margin-right: 5px; }
   </style>
 </head>
 <body>
 
-  <!-- Qaybta Galitaanka (Login) -->
   <div class="box" id="login-box">
     <h2>Galitaanka Maamulka (Admin)</h2>
     <input type="email" id="admin-email" placeholder="Geli Email-kaaga" required>
@@ -26,36 +28,175 @@
     <p id="error-msg" style="color: red; text-align: center;"></p>
   </div>
 
-  <!-- Qaybta Dashboard-ka Maamulka -->
   <div class="box hidden" id="dashboard-box">
     <h2>Admin Dashboard - Gurmad Network</h2>
-    <p>Ku soo dhawaada qaybta maamulka rasmiga ah.</p>
-    
+    <p style="text-align:center; color:green;"><strong>Waad ku soo dhawaatay Maamulka!</strong></p>
+
+    <input type="hidden" id="edit-id">
     <label><strong>Dooro Qaybta:</strong></label>
     <select id="category">
       <option value="news">Warar iyo Warbixino</option>
       <option value="media">GURMAD MEDIA</option>
       <option value="humanitarian">GURMAD HUMANITARIAN</option>
+      <option value="gallery">Sawirro iyo Muuqaallo</option>
     </select>
 
     <input type="text" id="post-title" placeholder="Cinwaanka Warka / Qoraalka">
     <textarea id="post-content" rows="4" placeholder="Faahfaahinta warka halkan ku qor..."></textarea>
-    
-    <label><strong>Soo Geli Sawir ama Muuqaal:</strong></label>
-    <input type="file" id="media-file" accept="image/*,video/*">
 
-    <button onclick="publishPost()">Daabac Hadda (Publish)</button>
+    <label><strong>Dooro Sawir (Taleefankaaga):</strong></label>
+    <input type="file" id="image-file" accept="image/*">
+
+    <label><strong>Link-ga Muuqaalka (YouTube / Facebook / Video URL - Ikhtiyaari):</strong></label>
+    <input type="url" id="video-url" placeholder="https://youtube.com...">
+
+    <button id="publish-btn" onclick="savePost()">Daabac Hadda (Publish)</button>
+
+    <hr style="margin: 25px 0;">
+    <h3>Maamul Qoraallada La Daabacay (Beddel ama Tirtir)</h3>
+    <div id="admin-posts-list">Soo dejinaya...</div>
+
     <button class="logout-btn" onclick="logoutAdmin()">Ka Bax (Logout)</button>
   </div>
 
-  <script>
-    function loginAdmin() {
-      alert("Waxaan hadda ku xidhaynaa Firebase si Email-kaaga iyo Password-kaagu u shaqeeyaan!");
-    }
-    function publishPost() {
-      alert("Waxaa la sugayaa ku xidhida kaydka xogta (Firebase) si wararku toos ugu dhacaan bogga!");
-    }
-  </script>
+  <script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://gstatic.com";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "https://gstatic.com";
 
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJzkKJUtrfCSCiBfHrnY4J6ck-H-prqC4",
+      authDomain: "://firebaseapp.com",
+      projectId: "gurmad-network",
+      storageBucket: "gurmad-network.firebasestorage.app",
+      messagingSenderId: "777748735743",
+      appId: "1:777748735743:web:5292e60252dfd315c50eca",
+      measurementId: "G-XHM1BMS69H"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById("login-box").classList.add("hidden");
+        document.getElementById("dashboard-box").classList.remove("hidden");
+        loadAdminPosts();
+      } else {
+        document.getElementById("login-box").classList.remove("hidden");
+        document.getElementById("dashboard-box").classList.add("hidden");
+      }
+    });
+
+    window.loginAdmin = async () => {
+      const email = document.getElementById("admin-email").value;
+      const password = document.getElementById("admin-password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        document.getElementById("error-msg").innerText = "Email-ka ama Password-ku waa khalad!";
+      }
+    };
+
+    window.logoutAdmin = () => signOut(auth);
+
+    function compressImage(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxW = 700;
+            const scale = maxW / img.width;
+            canvas.width = img.width > maxW ? maxW : img.width;
+            canvas.height = img.width > maxW ? img.height * scale : img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.7));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    window.savePost = async () => {
+      const btn = document.getElementById("publish-btn");
+      btn.innerText = "Waa la daabacayaa...";
+      btn.disabled = true;
+
+      const editId = document.getElementById("edit-id").value;
+      const category = document.getElementById("category").value;
+      const title = document.getElementById("post-title").value;
+      const content = document.getElementById("post-content").value;
+      const videoUrl = document.getElementById("video-url").value;
+      const fileInput = document.getElementById("image-file");
+
+      let imageData = "";
+      if (fileInput.files.length > 0) {
+        imageData = await compressImage(fileInput.files[0]);
+      }
+
+      const postData = { category, title, content, videoUrl, createdAt: Date.now() };
+      if (imageData) postData.image = imageData;
+
+      try {
+        if (editId) {
+          await updateDoc(doc(db, "posts", editId), postData);
+          alert("Warka waa la beddelay!");
+        } else {
+          await addDoc(collection(db, "posts"), postData);
+          alert("Warka cusub waa la daabacay!");
+        }
+        document.getElementById("edit-id").value = "";
+        document.getElementById("post-title").value = "";
+        document.getElementById("post-content").value = "";
+        document.getElementById("video-url").value = "";
+        fileInput.value = "";
+        loadAdminPosts();
+      } catch (e) {
+        alert("Khalad ayaa dhacay: " + e.message);
+      }
+      btn.innerText = "Daabac Hadda (Publish)";
+      btn.disabled = false;
+    };
+
+    window.loadAdminPosts = async () => {
+      const list = document.getElementById("admin-posts-list");
+      list.innerHTML = "";
+      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "post-item";
+        div.innerHTML = `
+          <strong>[${d.category.toUpperCase()}] ${d.title}</strong>
+          <p>${d.content.substring(0, 80)}...</p>
+          <button class="edit-btn" onclick="editPost('${docSnap.id}', '${d.category}', \`${d.title}\`, \`${d.content}\`, '${d.videoUrl || ""}')">Beddel</button>
+          <button class="del-btn" onclick="deletePost('${docSnap.id}')">Tirtir</button>
+        `;
+        list.appendChild(div);
+      });
+    };
+
+    window.editPost = (id, cat, title, content, video) => {
+      document.getElementById("edit-id").value = id;
+      document.getElementById("category").value = cat;
+      document.getElementById("post-title").value = title;
+      document.getElementById("post-content").value = content;
+      document.getElementById("video-url").value = video;
+      window.scrollTo(0, 0);
+    };
+
+    window.deletePost = async (id) => {
+      if (confirm("Ma hubtaa inaad tirtirto warkan?")) {
+        await deleteDoc(doc(db, "posts", id));
+        loadAdminPosts();
+      }
+    };
+  </script>
 </body>
 </html>
